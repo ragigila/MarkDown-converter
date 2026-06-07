@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MD Converter</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+    h1 { font-size: 1.8rem; font-weight: 600; margin-bottom: 8px; color: #fff; }
+    p.sub { color: #888; margin-bottom: 32px; font-size: 0.95rem; }
+    #drop-zone {
+      width: 100%; max-width: 640px;
+      border: 2px dashed #444;
+      border-radius: 12px;
+      padding: 60px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #drop-zone.hover { border-color: #7c6aff; background: #1a1830; }
+    #drop-zone .icon { font-size: 3rem; margin-bottom: 12px; }
+    #drop-zone p { color: #aaa; font-size: 0.95rem; }
+    #drop-zone span { color: #7c6aff; font-weight: 500; }
+    #file-input { display: none; }
+    #results { width: 100%; max-width: 640px; margin-top: 28px; }
+    .result-item {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .result-item .info { flex: 1; overflow: hidden; }
+    .result-item .fname { font-size: 0.9rem; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .result-item .status { font-size: 0.8rem; margin-top: 3px; }
+    .status.ok { color: #4caf7d; }
+    .status.err { color: #f04c4c; }
+    .status.loading { color: #888; }
+    a.dl-btn {
+      background: #7c6aff;
+      color: #fff;
+      padding: 7px 16px;
+      border-radius: 6px;
+      font-size: 0.83rem;
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    a.dl-btn:hover { background: #6a59e0; }
+    #convert-btn {
+      margin-top: 20px;
+      background: #7c6aff;
+      color: #fff;
+      border: none;
+      padding: 12px 36px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: none;
+    }
+    #convert-btn:hover { background: #6a59e0; }
+    #convert-btn:disabled { background: #444; cursor: not-allowed; }
+    #file-list { margin-top: 16px; width: 100%; max-width: 640px; }
+    .file-chip {
+      display: inline-block;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      color: #bbb;
+      margin: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>MD Converter</h1>
+  <p class="sub">Convert file apapun ke Markdown — bulk, lokal, offline</p>
+
+  <div id="drop-zone">
+    <div class="icon">📂</div>
+    <p>Drag &amp; drop file di sini, atau <span onclick="document.getElementById('file-input').click()">klik untuk pilih</span></p>
+    <p style="margin-top:8px;font-size:0.8rem;">PDF, DOCX, PPTX, XLSX, HTML, gambar, dan lainnya</p>
+    <input type="file" id="file-input" multiple>
+  </div>
+
+  <div id="file-list"></div>
+  <button id="convert-btn" onclick="convertFiles()">Convert Semua</button>
+  <div id="results"></div>
+
+  <script>
+    let selectedFiles = [];
+
+    const dropZone = document.getElementById("drop-zone");
+    const fileInput = document.getElementById("file-input");
+    const fileList = document.getElementById("file-list");
+    const convertBtn = document.getElementById("convert-btn");
+    const results = document.getElementById("results");
+
+    dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("hover"); });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("hover"));
+    dropZone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropZone.classList.remove("hover");
+      addFiles(Array.from(e.dataTransfer.files));
+    });
+    fileInput.addEventListener("change", () => addFiles(Array.from(fileInput.files)));
+
+    function addFiles(files) {
+      selectedFiles = [...selectedFiles, ...files];
+      renderFileList();
+    }
+
+    function renderFileList() {
+      fileList.innerHTML = selectedFiles.map(f => `<span class="file-chip">📄 ${f.name}</span>`).join("");
+      convertBtn.style.display = selectedFiles.length ? "inline-block" : "none";
+      results.innerHTML = "";
+    }
+
+    async function convertFiles() {
+      if (!selectedFiles.length) return;
+      convertBtn.disabled = true;
+      convertBtn.textContent = "Converting...";
+      results.innerHTML = "";
+
+      const formData = new FormData();
+      selectedFiles.forEach(f => formData.append("files", f));
+
+      let data;
+      try {
+        const res = await fetch("/convert", { method: "POST", body: formData });
+        data = await res.json();
+      } catch (e) {
+        results.innerHTML = `<div class="result-item"><div class="info"><span class="status err">Gagal: ${e}</span></div></div>`;
+        convertBtn.disabled = false;
+        convertBtn.textContent = "Convert Semua";
+        return;
+      }
+
+      results.innerHTML = data.map(r => {
+        const isOk = r.status === "ok";
+        return `<div class="result-item">
+          <div class="info">
+            <div class="fname">📄 ${r.name}</div>
+            <div class="status ${isOk ? "ok" : "err"}">${isOk ? "✓ " + r.output : r.status}</div>
+          </div>
+          ${isOk ? `<a class="dl-btn" href="/download/${encodeURIComponent(r.output)}">Download</a>` : ""}
+        </div>`;
+      }).join("");
+
+      convertBtn.disabled = false;
+      convertBtn.textContent = "Convert Semua";
+      selectedFiles = [];
+      fileList.innerHTML = "";
+    }
+  </script>
+</body>
+</html>
