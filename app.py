@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from markitdown import MarkItDown
+import markdown
 
 app = Flask(__name__)
 OUTPUT_DIR = Path(__file__).parent / "output"
@@ -53,6 +54,16 @@ def convert():
 @app.route("/download/<filename>")
 def download(filename):
     return send_from_directory(OUTPUT_DIR, filename, as_attachment=True)
+
+
+@app.route("/view/<filename>")
+def view(filename):
+    file_path = OUTPUT_DIR / filename
+    if not file_path.exists():
+        return "File tidak ditemukan", 404
+    raw = file_path.read_text(encoding="utf-8")
+    html_content = markdown.markdown(raw, extensions=["tables", "fenced_code", "nl2br"])
+    return render_template("viewer.html", filename=filename, content=html_content)
 
 
 if __name__ == "__main__":
