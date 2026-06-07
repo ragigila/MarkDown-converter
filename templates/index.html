@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -104,17 +104,17 @@
 </head>
 <body>
   <h1>MD Converter</h1>
-  <p class="sub">Convert file apapun ke Markdown — bulk, lokal, offline</p>
+  <p class="sub">Convert any file to Markdown — bulk, local, offline</p>
 
   <div id="drop-zone">
     <div class="icon">📂</div>
-    <p>Drag &amp; drop file di sini, atau <span onclick="document.getElementById('file-input').click()">klik untuk pilih</span></p>
-    <p style="margin-top:8px;font-size:0.8rem;">PDF, DOCX, PPTX, XLSX, HTML, gambar, dan lainnya</p>
+    <p>Drag &amp; drop files here, or <span onclick="document.getElementById('file-input').click()">click to browse</span></p>
+    <p style="margin-top:8px;font-size:0.8rem;">PDF, DOCX, PPTX, XLSX, HTML, images, and more</p>
     <input type="file" id="file-input" multiple>
   </div>
 
   <div id="file-list"></div>
-  <button id="convert-btn" onclick="convertFiles()">Convert Semua</button>
+  <button id="convert-btn" onclick="convertFiles()">Convert All</button>
   <div id="results"></div>
 
   <script>
@@ -160,9 +160,9 @@
         const res = await fetch("/convert", { method: "POST", body: formData });
         data = await res.json();
       } catch (e) {
-        results.innerHTML = `<div class="result-item"><div class="info"><span class="status err">Gagal: ${e}</span></div></div>`;
+        results.innerHTML = `<div class="result-item"><div class="info"><span class="status err">Failed: ${e}</span></div></div>`;
         convertBtn.disabled = false;
-        convertBtn.textContent = "Convert Semua";
+        convertBtn.textContent = "Convert All";
         return;
       }
 
@@ -174,14 +174,14 @@
             <div class="status ${isOk ? "ok" : "err"}">${isOk ? "✓ " + r.output : r.status}</div>
           </div>
           ${isOk ? `
-            <a class="view-btn" href="/view/${encodeURIComponent(r.output)}" target="_blank">Lihat</a>
+            <a class="view-btn" href="/view/${encodeURIComponent(r.output)}" target="_blank">View</a>
             <a class="dl-btn" href="/download/${encodeURIComponent(r.output)}">Download</a>
           ` : ""}
         </div>`;
       }).join("");
 
       convertBtn.disabled = false;
-      convertBtn.textContent = "Convert Semua";
+      convertBtn.textContent = "Convert All";
       selectedFiles = [];
       fileList.innerHTML = "";
     }
@@ -189,8 +189,8 @@
 
   <footer>
     <p>
-      Menggunakan <a href="https://github.com/microsoft/markitdown" target="_blank">markitdown</a> oleh Microsoft,
-      diolah dengan Flask + Python oleh <a href="https://github.com/ragigila" target="_blank">Ragil</a>.
+      Built with <a href="https://github.com/microsoft/markitdown" target="_blank">markitdown</a> by Microsoft,
+      wrapped with Flask + Python by <a href="https://github.com/ragigila" target="_blank">Ragil</a>.
     </p>
     <p style="margin-top:6px;">
       Source code: <a href="https://github.com/ragigila/MarkDown-converter" target="_blank">github.com/ragigila/MarkDown-converter</a>
