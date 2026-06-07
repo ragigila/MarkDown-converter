@@ -17,8 +17,8 @@ Download Python 3.9+ dari [python.org](https://www.python.org/downloads/)
 ### 2. Clone repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/md-converter.git
-cd md-converter
+git clone https://github.com/ragigila/MarkDown-converter.git
+cd MarkDown-converter
 ```
 
 ### 3. Install dependencies
