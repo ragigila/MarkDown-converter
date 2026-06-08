@@ -2,3 +2,5 @@ flask
 gunicorn
 markitdown[all]
 markdown
+pytesseract
+Pillow

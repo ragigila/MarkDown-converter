@@ -4,12 +4,18 @@ from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory, render_template
 from markitdown import MarkItDown
 import markdown
+import pytesseract
+from PIL import Image
+
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 app = Flask(__name__)
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 md = MarkItDown()
+
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp"}
 
 
 @app.route("/")
@@ -34,14 +40,20 @@ def convert():
             tmp_path = tmp.name
 
         try:
-            result = md.convert(tmp_path)
+            if suffix.lower() in IMAGE_EXTENSIONS:
+                img = Image.open(tmp_path)
+                text = pytesseract.image_to_string(img, lang="eng+ind")
+                md_content = f"# {original_name}\n\n{text.strip()}"
+            else:
+                result = md.convert(tmp_path)
+                md_content = result.text_content
+
             out_path = OUTPUT_DIR / out_name
-            # avoid overwrite collision
             counter = 1
             while out_path.exists():
                 out_path = OUTPUT_DIR / f"{original_name}_{counter}.md"
                 counter += 1
-            out_path.write_text(result.text_content, encoding="utf-8")
+            out_path.write_text(md_content, encoding="utf-8")
             results.append({"name": f.filename, "output": out_path.name, "status": "ok"})
         except Exception as e:
             results.append({"name": f.filename, "output": None, "status": f"error: {e}"})
